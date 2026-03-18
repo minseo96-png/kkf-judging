@@ -1,14 +1,68 @@
 <!DOCTYPE html>
 <html>
+<head>
+  <meta charset="UTF-8">
+  <title>KKF 심사 시스템</title>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+    }
+    input, select {
+      width: 200px;
+      padding: 8px;
+      margin: 5px 0;
+    }
+    button {
+      padding: 10px 20px;
+      background: black;
+      color: white;
+      border: none;
+    }
+  </style>
+</head>
+
 <body>
 
-<h2>버튼 테스트</h2>
+<h2>KKF 심사 입력</h2>
+
+<label>심사위원</label><br>
+<select id="judge">
+  <option>심사위원1</option>
+  <option>심사위원2</option>
+</select>
+
+<br>
+
+<label>참가자 번호</label><br>
+<input type="text" id="number">
+
+<br>
+
+<label>점수</label><br>
+<input type="number" id="score">
+
+<br><br>
 
 <button onclick="save()">제출</button>
 
 <script>
 function save(){
-  alert("정상 작동!");
+  let judge = document.getElementById("judge").value;
+  let number = document.getElementById("number").value;
+  let score = document.getElementById("score").value;
+
+  if(number === "" || score === ""){
+    alert("값을 입력해주세요");
+    return;
+  }
+
+  alert(
+    "저장 완료\n\n" +
+    "심사위원: " + judge + "\n" +
+    "번호: " + number + "\n" +
+    "점수: " + score
+  );
 }
 </script>
 
