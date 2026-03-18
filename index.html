@@ -1,170 +1,184 @@
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDNDyv2AUlu_wGwdhri4dsG1bu4MGzqjg",
-    authDomain: "kkf-judging-system.firebaseapp.com",
-    projectId: "kkf-judging-system",
-    storageBucket: "kkf-judging-system.firebasestorage.app",
-    messagingSenderId: "1058615594389",
-    appId: "1:1058615594389:web:524e946532fa8bdc04fa9c"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  // 점수 저장
-  window.save = async function () {
-    let judge = document.getElementById("judge").value;
-    let number = document.getElementById("number").value;
-    let score = document.getElementById("score").value;
-
-    if (number === "" || score === "") {
-      alert("값 입력해주세요");
-      return;
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KKF 심사 시스템</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 500px;
     }
-
-    await addDoc(collection(db, "scores"), {
-      judge,
-      number,
-      score: Number(score),
-      time: new Date()
-    });
-
-    alert("저장 완료!");
-  };
-
-  // 결과 불러오기 (평균 + 정렬)
-  window.loadData = async function () {
-    const querySnapshot = await getDocs(collection(db, "scores"));
-
-    let data = {};
-
-    querySnapshot.forEach((doc) => {
-      let d = doc.data();
-
-      if (!data[d.number]) {
-        data[d.number] = [];
-      }
-      data[d.number].push(d.score);
-    });
-
-    let result = [];
-
-    for (let num in data) {
-      let scores = data[num];
-      let avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-
-      result.push({
-        number: num,
-        avg: avg.toFixed(2)
-      });
+    h2 {
+      margin-bottom: 20px;
     }
+    label {
+      display: block;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      max-width: 260px;
+      padding: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 18px;
+      padding: 12px 20px;
+      background: black;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    table {
+      margin-top: 16px;
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 400px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px 10px;
+      text-align: center;
+    }
+    th {
+      background: #f3f3f3;
+    }
+    .section {
+      margin-top: 36px;
+    }
+  </style>
+</head>
+<body>
 
-    // 평균 기준 정렬
-    result.sort((a, b) => b.avg - a.avg);
+  <h2>KKF 심사 입력</h2>
 
-    let table = document.getElementById("resultTable");
-    table.innerHTML = `
+  <label for="judge">심사위원</label>
+  <select id="judge">
+    <option value="심사위원1">심사위원1</option>
+    <option value="심사위원2">심사위원2</option>
+  </select>
+
+  <label for="number">참가자 번호</label>
+  <input type="text" id="number">
+
+  <label for="score">점수</label>
+  <input type="number" id="score">
+
+  <button id="saveBtn">제출</button>
+
+  <div class="section">
+    <h2>결과 보기</h2>
+    <button id="loadBtn">결과 불러오기</button>
+
+    <table id="resultTable">
       <tr>
         <th>참가번호</th>
         <th>평균점수</th>
       </tr>
-    `;
+    </table>
+  </div>
 
-    result.forEach(r => {
-      table.innerHTML += `
-        <tr>
-          <td>${r.number}</td>
-          <td>${r.avg}</td>
-        </tr>
-      `;
-    });
-  };
-</script>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDNDyv2AUlu_wGwdhri4dsG1bu4MGzqjg",
-    authDomain: "kkf-judging-system.firebaseapp.com",
-    projectId: "kkf-judging-system",
-    storageBucket: "kkf-judging-system.firebasestorage.app",
-    messagingSenderId: "1058615594389",
-    appId: "1:1058615594389:web:524e946532fa8bdc04fa9c"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyDNDyv2AUlu_wGwdhri4dsG1bu4MGzqjg",
+      authDomain: "kkf-judging-system.firebaseapp.com",
+      projectId: "kkf-judging-system",
+      storageBucket: "kkf-judging-system.firebasestorage.app",
+      messagingSenderId: "1058615594389",
+      appId: "1:1058615594389:web:524e946532fa8bdc04fa9c"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  // 점수 저장
-  window.save = async function () {
-    let judge = document.getElementById("judge").value;
-    let number = document.getElementById("number").value;
-    let score = document.getElementById("score").value;
+    async function saveData() {
+      const judge = document.getElementById("judge").value;
+      const number = document.getElementById("number").value.trim();
+      const score = document.getElementById("score").value.trim();
 
-    if (number === "" || score === "") {
-      alert("값 입력해주세요");
-      return;
-    }
-
-    await addDoc(collection(db, "scores"), {
-      judge,
-      number,
-      score: Number(score),
-      time: new Date()
-    });
-
-    alert("저장 완료!");
-  };
-
-  // 결과 불러오기 (평균 + 정렬)
-  window.loadData = async function () {
-    const querySnapshot = await getDocs(collection(db, "scores"));
-
-    let data = {};
-
-    querySnapshot.forEach((doc) => {
-      let d = doc.data();
-
-      if (!data[d.number]) {
-        data[d.number] = [];
+      if (number === "" || score === "") {
+        alert("값 입력해주세요");
+        return;
       }
-      data[d.number].push(d.score);
-    });
 
-    let result = [];
+      try {
+        await addDoc(collection(db, "scores"), {
+          judge,
+          number,
+          score: Number(score),
+          time: new Date().toISOString()
+        });
 
-    for (let num in data) {
-      let scores = data[num];
-      let avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-
-      result.push({
-        number: num,
-        avg: avg.toFixed(2)
-      });
+        alert("저장 완료!");
+        document.getElementById("number").value = "";
+        document.getElementById("score").value = "";
+      } catch (error) {
+        console.error(error);
+        alert("저장 중 오류가 발생했습니다.");
+      }
     }
 
-    // 평균 기준 정렬
-    result.sort((a, b) => b.avg - a.avg);
+    async function loadData() {
+      try {
+        const querySnapshot = await getDocs(collection(db, "scores"));
+        const grouped = {};
 
-    let table = document.getElementById("resultTable");
-    table.innerHTML = `
-      <tr>
-        <th>참가번호</th>
-        <th>평균점수</th>
-      </tr>
-    `;
+        querySnapshot.forEach((doc) => {
+          const d = doc.data();
+          if (!grouped[d.number]) {
+            grouped[d.number] = [];
+          }
+          grouped[d.number].push(Number(d.score));
+        });
 
-    result.forEach(r => {
-      table.innerHTML += `
-        <tr>
-          <td>${r.number}</td>
-          <td>${r.avg}</td>
-        </tr>
-      `;
-    });
-  };
-</script>
+        const result = Object.keys(grouped).map((number) => {
+          const scores = grouped[number];
+          const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+          return {
+            number,
+            avg: avg.toFixed(2)
+          };
+        });
+
+        result.sort((a, b) => Number(b.avg) - Number(a.avg));
+
+        const table = document.getElementById("resultTable");
+        table.innerHTML = `
+          <tr>
+            <th>참가번호</th>
+            <th>평균점수</th>
+          </tr>
+        `;
+
+        result.forEach((item) => {
+          table.innerHTML += `
+            <tr>
+              <td>${item.number}</td>
+              <td>${item.avg}</td>
+            </tr>
+          `;
+        });
+      } catch (error) {
+        console.error(error);
+        alert("결과 불러오기 중 오류가 발생했습니다.");
+      }
+    }
+
+    document.getElementById("saveBtn").addEventListener("click", saveData);
+    document.getElementById("loadBtn").addEventListener("click", loadData);
+  </script>
+
+</body>
+</html>
