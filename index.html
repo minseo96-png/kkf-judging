@@ -1,47 +1,52 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KKF 심사 시스템</title>
+<meta charset="UTF-8">
+<title>KKF 심사 시스템</title>
 
-  <style>
-    body { font-family: Arial; padding:20px; max-width:500px; }
-    label { display:block; margin-top:10px; font-weight:bold; }
-    input, select { width:100%; padding:10px; margin-top:5px; }
-    button { margin-top:15px; padding:10px; background:black; color:white; border:none; }
-    table { margin-top:20px; width:100%; border-collapse: collapse; }
-    th, td { border:1px solid #ddd; padding:8px; text-align:center; }
-  </style>
+<style>
+body { font-family: Arial; padding:20px; max-width:500px; }
+label { display:block; margin-top:10px; font-weight:bold; }
+input, select { width:100%; padding:10px; margin-top:5px; }
+button { margin-top:15px; padding:10px; background:black; color:white; border:none; }
+table { margin-top:20px; width:100%; border-collapse: collapse; }
+th, td { border:1px solid #ddd; padding:8px; text-align:center; }
+</style>
 </head>
 
 <body>
 
 <h2>KKF 심사 입력</h2>
 
+<label>회차번호</label>
+<input id="examId" placeholder="예: 1789">
+
+<button onclick="loadParticipants()">참가자 불러오기</button>
+
+
 <label>심사위원</label>
 <select id="judge">
-  <option value="심사위원1">심사위원1</option>
-  <option value="심사위원2">심사위원2</option>
+<option value="심사위원1">심사위원1</option>
+<option value="심사위원2">심사위원2</option>
 </select>
 
 <label>참가자 선택</label>
 <select id="number"></select>
 
 <label>이름</label>
-<input type="text" id="name" readonly>
+<input id="name" readonly>
 
 <label>생년월일</label>
-<input type="text" id="birth" readonly>
+<input id="birth" readonly>
 
 <label>응시클립</label>
-<input type="text" id="clip" readonly>
+<input id="clip" readonly>
 
 <label>견종</label>
-<input type="text" id="dog" readonly>
+<input id="dog" readonly>
 
 <label>점수</label>
-<input type="number" id="score">
+<input id="score" type="number">
 
 <button onclick="saveData()">제출</button>
 
@@ -50,10 +55,10 @@
 <button onclick="loadResults()">결과 불러오기</button>
 
 <table id="resultTable">
-  <tr>
-    <th>참가번호</th>
-    <th>평균점수</th>
-  </tr>
+<tr>
+<th>참가번호</th>
+<th>평균점수</th>
+</tr>
 </table>
 
 
@@ -74,29 +79,39 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 
-// 🔥 참가자 목록 자동 불러오기
-async function loadParticipants() {
+// 🔥 회차별 참가자 불러오기
+window.loadParticipants = async function () {
+
+  const examId = document.getElementById("examId").value;
+
+  if (!examId) {
+    alert("회차 입력하세요");
+    return;
+  }
+
   const select = document.getElementById("number");
   select.innerHTML = '<option value="">선택</option>';
 
-  const querySnapshot = await getDocs(collection(db, "participants"));
+  const snapshot = await getDocs(collection(db, "exams", examId, "participants"));
 
-  querySnapshot.forEach((docItem) => {
+  snapshot.forEach(docItem => {
     const option = document.createElement("option");
     option.value = docItem.id;
     option.textContent = docItem.id;
     select.appendChild(option);
   });
-}
+};
 
 
-// 🔥 참가자 선택 시 정보 자동 입력
-document.getElementById("number").addEventListener("change", async function() {
+// 🔥 참가자 선택 시 정보 자동 표시
+document.getElementById("number").addEventListener("change", async function () {
 
+  const examId = document.getElementById("examId").value;
   const number = this.value;
-  if (!number) return;
 
-  const docRef = doc(db, "participants", number);
+  if (!examId || !number) return;
+
+  const docRef = doc(db, "exams", examId, "participants", number);
   const docSnap = await getDoc(docRef);
 
   if (docSnap.exists()) {
@@ -110,19 +125,21 @@ document.getElementById("number").addEventListener("change", async function() {
 });
 
 
-// 🔥 점수 저장
+// 🔥 점수 저장 (회차 포함)
 window.saveData = async function () {
 
+  const examId = document.getElementById("examId").value;
   const judge = document.getElementById("judge").value;
   const number = document.getElementById("number").value;
   const score = document.getElementById("score").value;
 
-  if (!number || !score) {
-    alert("번호랑 점수 입력하세요");
+  if (!examId || !number || !score) {
+    alert("회차 / 번호 / 점수 입력하세요");
     return;
   }
 
   await addDoc(collection(db, "scores"), {
+    examId,
     judge,
     number,
     score: Number(score),
@@ -133,8 +150,10 @@ window.saveData = async function () {
 };
 
 
-// 🔥 결과 불러오기 (평균 계산)
+// 🔥 결과 조회 (회차별)
 window.loadResults = async function () {
+
+  const examId = document.getElementById("examId").value;
 
   const table = document.getElementById("resultTable");
   table.innerHTML = `
@@ -150,10 +169,9 @@ window.loadResults = async function () {
   snapshot.forEach(doc => {
     const d = doc.data();
 
-    if (!data[d.number]) {
-      data[d.number] = [];
-    }
+    if (d.examId !== examId) return;
 
+    if (!data[d.number]) data[d.number] = [];
     data[d.number].push(d.score);
   });
 
@@ -169,10 +187,6 @@ window.loadResults = async function () {
     `;
   }
 };
-
-
-// 🔥 페이지 시작 시 참가자 불러오기
-loadParticipants();
 
 </script>
 
