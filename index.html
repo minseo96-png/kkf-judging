@@ -46,25 +46,39 @@
 
 <button onclick="save()">제출</button>
 
-<script>
-function save(){
-  let judge = document.getElementById("judge").value;
-  let number = document.getElementById("number").value;
-  let score = document.getElementById("score").value;
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  if(number === "" || score === ""){
-    alert("값을 입력해주세요");
-    return;
+  const firebaseConfig = {
+    apiKey: "AIzaSyDNDyv2AUlu...",
+    authDomain: "kkf-judging-system.firebaseapp.com",
+    projectId: "kkf-judging-system",
+    storageBucket: "kkf-judging-system.firebasestorage.app",
+    messagingSenderId: "1058615594389",
+    appId: "1:1058615594389:web:524e946532fa8bdc04fa9c"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.save = async function () {
+    let judge = document.getElementById("judge").value;
+    let number = document.getElementById("number").value;
+    let score = document.getElementById("score").value;
+
+    if (number === "" || score === "") {
+      alert("값 입력해주세요");
+      return;
+    }
+
+    await addDoc(collection(db, "scores"), {
+      judge,
+      number,
+      score: Number(score),
+      time: new Date()
+    });
+
+    alert("저장 완료!");
   }
-
-  alert(
-    "저장 완료\n\n" +
-    "심사위원: " + judge + "\n" +
-    "번호: " + number + "\n" +
-    "점수: " + score
-  );
-}
 </script>
-
-</body>
-</html>
