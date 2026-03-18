@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>관리자 페이지</title>
+
+<style>
+body { font-family: Arial; padding:20px; max-width:500px; }
+input { width:100%; padding:10px; margin-top:5px; }
+button { margin-top:15px; padding:10px; background:black; color:white; }
+</style>
+</head>
+
+<body>
+
+<h2>참가자 등록 (관리자)</h2>
+
+<label>참가번호</label>
+<input id="number">
+
+<label>이름</label>
+<input id="name">
+
+<label>생년월일</label>
+<input id="birth">
+
+<label>응시클립</label>
+<input id="clip">
+
+<label>견종</label>
+<input id="dog">
+
+<button onclick="saveParticipant()">저장</button>
+
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDNDyv2AUlu_wGwdhri4dsG1bu4MGzqjg",
+  authDomain: "kkf-judging-system.firebaseapp.com",
+  projectId: "kkf-judging-system",
+  storageBucket: "kkf-judging-system.firebasestorage.app",
+  messagingSenderId: "1058615594389",
+  appId: "1:1058615594389:web:524e946532fa8bdc04fa9c"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.saveParticipant = async function () {
+
+  const number = document.getElementById("number").value;
+
+  await setDoc(doc(db, "participants", number), {
+    name: document.getElementById("name").value,
+    birth: document.getElementById("birth").value,
+    clip: document.getElementById("clip").value,
+    dog: document.getElementById("dog").value
+  });
+
+  alert("저장 완료!");
+};
+</script>
+
+</body>
+</html>
