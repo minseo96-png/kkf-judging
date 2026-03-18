@@ -2,11 +2,12 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>KKF 관리자 페이지</title>
+<title>KKF 심사 시스템</title>
 
 <style>
-body { font-family: Arial; padding:20px; max-width:600px; }
-input { width:100%; padding:10px; margin-top:5px; }
+body { font-family: Arial; padding:20px; max-width:500px; }
+label { display:block; margin-top:10px; font-weight:bold; }
+input, select { width:100%; padding:10px; margin-top:5px; }
 button { margin-top:15px; padding:10px; background:black; color:white; border:none; }
 table { margin-top:20px; width:100%; border-collapse: collapse; }
 th, td { border:1px solid #ddd; padding:8px; text-align:center; }
@@ -15,50 +16,55 @@ th, td { border:1px solid #ddd; padding:8px; text-align:center; }
 
 <body>
 
-<h2>참가자 등록 (관리자)</h2>
+<h2>KKF 심사 입력</h2>
 
 <label>회차번호</label>
 <input id="examId" placeholder="예: 1789">
 
-<label>참가번호</label>
-<input id="number">
+<button onclick="loadParticipants()">참가자 불러오기</button>
+
+
+<label>심사위원</label>
+<select id="judge">
+<option value="심사위원1">심사위원1</option>
+<option value="심사위원2">심사위원2</option>
+</select>
+
+<label>참가자 선택</label>
+<select id="number"></select>
 
 <label>이름</label>
-<input id="name">
+<input id="name" readonly>
 
 <label>생년월일</label>
-<input id="birth">
+<input id="birth" readonly>
 
 <label>응시클립</label>
-<input id="clip">
+<input id="clip" readonly>
 
 <label>견종</label>
-<input id="dog">
+<input id="dog" readonly>
 
-<button onclick="saveParticipant()">저장</button>
+<label>점수</label>
+<input id="score" type="number">
+
+<button onclick="saveData()">제출</button>
 
 
-<h2>회차별 조회</h2>
+<h2>결과 보기</h2>
+<button onclick="loadResults()">결과 불러오기</button>
 
-<label>회차번호 입력</label>
-<input id="searchExam">
-
-<button onclick="loadExam()">조회</button>
-
-<table id="adminTable">
+<table id="resultTable">
 <tr>
-<th>번호</th>
-<th>이름</th>
-<th>생년월일</th>
-<th>클립</th>
-<th>견종</th>
+<th>참가번호</th>
+<th>평균점수</th>
 </tr>
 </table>
 
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDNDyv2AUlu_wGwdhri4dsG1bu4MGzqjg",
@@ -73,59 +79,113 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 
-// 🔥 참가자 저장 (회차별)
-window.saveParticipant = async function () {
+// 🔥 회차별 참가자 불러오기
+window.loadParticipants = async function () {
 
   const examId = document.getElementById("examId").value;
-  const number = document.getElementById("number").value;
 
-  if (!examId || !number) {
-    alert("회차랑 번호 입력하세요");
+  if (!examId) {
+    alert("회차 입력하세요");
     return;
   }
 
-  await setDoc(doc(db, "exams", examId, "participants", number), {
-    name: document.getElementById("name").value,
-    birth: document.getElementById("birth").value,
-    clip: document.getElementById("clip").value,
-    dog: document.getElementById("dog").value
+  const select = document.getElementById("number");
+  select.innerHTML = '<option value="">선택</option>';
+
+  const snapshot = await getDocs(collection(db, "exams", examId, "participants"));
+
+  snapshot.forEach(docItem => {
+    const option = document.createElement("option");
+    option.value = docItem.id;
+    option.textContent = docItem.id;
+    select.appendChild(option);
+  });
+};
+
+
+// 🔥 참가자 선택 시 정보 자동 표시
+document.getElementById("number").addEventListener("change", async function () {
+
+  const examId = document.getElementById("examId").value;
+  const number = this.value;
+
+  if (!examId || !number) return;
+
+  const docRef = doc(db, "exams", examId, "participants", number);
+  const docSnap = await getDoc(docRef);
+
+  if (docSnap.exists()) {
+    const d = docSnap.data();
+
+    document.getElementById("name").value = d.name || "";
+    document.getElementById("birth").value = d.birth || "";
+    document.getElementById("clip").value = d.clip || "";
+    document.getElementById("dog").value = d.dog || "";
+  }
+});
+
+
+// 🔥 점수 저장 (회차 포함)
+window.saveData = async function () {
+
+  const examId = document.getElementById("examId").value;
+  const judge = document.getElementById("judge").value;
+  const number = document.getElementById("number").value;
+  const score = document.getElementById("score").value;
+
+  if (!examId || !number || !score) {
+    alert("회차 / 번호 / 점수 입력하세요");
+    return;
+  }
+
+  await addDoc(collection(db, "scores"), {
+    examId,
+    judge,
+    number,
+    score: Number(score),
+    time: new Date()
   });
 
   alert("저장 완료!");
 };
 
 
-// 🔥 회차별 조회
-window.loadExam = async function () {
+// 🔥 결과 조회 (회차별)
+window.loadResults = async function () {
 
-  const examId = document.getElementById("searchExam").value;
+  const examId = document.getElementById("examId").value;
 
-  const table = document.getElementById("adminTable");
+  const table = document.getElementById("resultTable");
   table.innerHTML = `
     <tr>
-      <th>번호</th>
-      <th>이름</th>
-      <th>생년월일</th>
-      <th>클립</th>
-      <th>견종</th>
+      <th>참가번호</th>
+      <th>평균점수</th>
     </tr>
   `;
 
-  const snapshot = await getDocs(collection(db, "exams", examId, "participants"));
+  const snapshot = await getDocs(collection(db, "scores"));
+  const data = {};
 
-  snapshot.forEach(docItem => {
-    const d = docItem.data();
+  snapshot.forEach(doc => {
+    const d = doc.data();
+
+    if (d.examId !== examId) return;
+
+    if (!data[d.number]) data[d.number] = [];
+    data[d.number].push(d.score);
+  });
+
+  for (let number in data) {
+    const scores = data[number];
+    const avg = (scores.reduce((a,b)=>a+b,0) / scores.length).toFixed(2);
 
     table.innerHTML += `
       <tr>
-        <td>${docItem.id}</td>
-        <td>${d.name}</td>
-        <td>${d.birth}</td>
-        <td>${d.clip}</td>
-        <td>${d.dog}</td>
+        <td>${number}</td>
+        <td>${avg}</td>
       </tr>
     `;
-  });
+  }
 };
 
 </script>
